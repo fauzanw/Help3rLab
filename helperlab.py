@@ -34,7 +34,7 @@ def banner():
 \033[97m[\033[90m.................................\033[90;1m-----------------.................................\033[97m]                        
 \033[97m[%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%]
        =[ \033[93;2mHelp3rLab v.0.1 Beta\033[97;0m                                    ]=
-+ -- --=[ Author : Binsar DJ, Fauzanw & Rizsyad AR             ]=-- -- +
++ -- --=[ Author : Binsar DJ, Fauzanw & Rizsyad AR                ]=-- -- +
 + -- --=[ Team   : { IndoSec }                                    ]=-- -- +
 + -- --=[ Help3rLab is your helper lab to exploit security holes  ]=-- -- + 
 + -- --=[ We not responsible for damage caused by Help3rL4b,      ]=-- -- +   
@@ -165,9 +165,14 @@ def lfitorce():
 banner()
 menu()
 
-action = input("\n[\033[93m?\033[97m] Options : ")
+try:
+    action = input("\n[\033[93m?\033[97m] Options : ")
 
-if action == "1":
-    sqli()
-elif action == "5":
-    lfitorce()
+    if action == "1":
+        sqli()
+    elif action == "5":
+        lfitorce()
+except KeyboardInterrupt:
+    print('\n[\033[92m+\033[97m] CTRL + C detected')
+    print('[\033[92m+\033[97m] Exiting...')
+    raise SystemExit
