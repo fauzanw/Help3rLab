@@ -44,6 +44,9 @@ class Dios:
         string = string.decode("utf-8")
 
         return string
+    def addslashes(self, s):
+        d = {'"':'\\"', "'":"\\'", "\0":"\\\0", "\\":"\\\\"}
+        return ''.join(d.get(c, c) for c in s)
 
 
     # Method get Information from target

