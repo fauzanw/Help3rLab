@@ -8,4 +8,4 @@ informations = SqliHelper.information()
 dump_data = SqliHelper.dump_data(tables='news',columns=['judul','isi','user'],database='u9897uwx_kabel')
 print(dump_data)
 # except Exception as identifier:
-#     print(identifier)
+#     print(identifier) 

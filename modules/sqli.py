@@ -64,7 +64,7 @@ class Sqli:
                 socket          = socket.group(1)           if bool(socket)             else "can't get information"
             except Exception as identifier:
                 raise Exception(identifier)
-
+ 
         return {
                     "hostname": hostname,
                     "port": port,
