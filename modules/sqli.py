@@ -14,8 +14,7 @@ class Sqli:
       self.result = ''
 
     def get_result(self,body):
-        body = body.replace("\n", "\r")
-        sqli_helper = re.search("<sqli-helper>(.*)</sqli-helper>",body)
+        sqli_helper = re.search("<sqli-helper>(.*)</sqli-helper>",body, re.DOTALL)
 
         if ( sqli_helper ):
             return sqli_helper.group(1)
@@ -25,7 +24,7 @@ class Sqli:
                     "message": "Response sql injectin do not match"
                 })
     def getResultByTag(self, tag):
-        sqli_helper = re.search(f"<{tag}>(.*)</{tag}>",self.result)
+        sqli_helper = re.search(f"<{tag}>(.*)</{tag}>",self.result, re.DOTALL)
         return sqli_helper.group(1) if bool(sqli_helper) else "Can't get information"
 
     def information(self, level=1):
@@ -35,19 +34,19 @@ class Sqli:
             try:
                 sqli_helper = self.get_result(response.text)
 
-                hostname        = re.search("<hostname\(\)>(.*)</hostname\(\)>", sqli_helper)
-                port            = re.search("<port\(\)>(.*)</port\(\)>", sqli_helper)
-                user            = re.search("<user\(\)>(.*)</user\(\)>", sqli_helper)
-                schema          = re.search("<schema\(\)>(.*)</schema\(\)>", sqli_helper)
-                version         = re.search("<version>(.*)</version>", sqli_helper)
-                os_version      = re.search("<os_version>(.*)</os_version>", sqli_helper)
-                mechine_version = re.search("<mechine_version>(.*)</mechine_version>", sqli_helper)
-                base_dir        = re.search("<base_dir>(.*)</base_dir>", sqli_helper)
-                data_dir        = re.search("<data_dir>(.*)</data_dir>", sqli_helper)
-                ssl             = re.search("<ssl>(.*)</ssl>", sqli_helper)
-                openssl         = re.search("<openssl>(.*)</openssl>", sqli_helper)
-                symlink         = re.search("<symlink>(.*)</symlink>", sqli_helper)
-                socket          = re.search("<socket>(.*)</socket>", sqli_helper)
+                hostname        = re.search("<hostname\(\)>(.*)</hostname\(\)>", sqli_helper, re.DOTALL)
+                port            = re.search("<port\(\)>(.*)</port\(\)>", sqli_helper, re.DOTALL)
+                user            = re.search("<user\(\)>(.*)</user\(\)>", sqli_helper, re.DOTALL)
+                schema          = re.search("<schema\(\)>(.*)</schema\(\)>", sqli_helper, re.DOTALL)
+                version         = re.search("<version>(.*)</version>", sqli_helper, re.DOTALL)
+                os_version      = re.search("<os_version>(.*)</os_version>", sqli_helper, re.DOTALL)
+                mechine_version = re.search("<mechine_version>(.*)</mechine_version>", sqli_helper, re.DOTALL)
+                base_dir        = re.search("<base_dir>(.*)</base_dir>", sqli_helper, re.DOTALL)
+                data_dir        = re.search("<data_dir>(.*)</data_dir>", sqli_helper, re.DOTALL)
+                ssl             = re.search("<ssl>(.*)</ssl>", sqli_helper, re.DOTALL)
+                openssl         = re.search("<openssl>(.*)</openssl>", sqli_helper, re.DOTALL)
+                symlink         = re.search("<symlink>(.*)</symlink>", sqli_helper, re.DOTALL)
+                socket          = re.search("<socket>(.*)</socket>", sqli_helper, re.DOTALL)
 
                 hostname        = hostname.group(1)         if bool(hostname)           else "can't get information"
                 port            = port.group(1)             if bool(port)               else "can't get information"
