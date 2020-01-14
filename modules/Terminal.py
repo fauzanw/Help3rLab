@@ -201,7 +201,7 @@ class Terminal:
     use <database_name>         : change the database to be used
     show tables                 : shows all data tables in the database used
     show columns <column_name>  : shows all data columns in the table
-    dump table <column_name>     : pulling out data in the column used
+    dump table <column_name>    : pulling out data in the column used
 
 
         """)
